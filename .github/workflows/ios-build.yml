@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   build-ios:
-    runs-on: macos-13
+    runs-on: macos-latest
     timeout-minutes: 30
     steps:
       - name: Checkout
@@ -43,9 +43,6 @@ jobs:
       - name: Build .app (unsigned)
         working-directory: swift-frontend
         run: |
-          # Build with the workspace's scheme. The BroadcastExtension depends on
-          # LiveKit's Broadcast sources which need Logging from swift-log.
-          # Build SPM dependencies explicitly first, then the app.
           xcodebuild clean build \
             -project VisionDemo.xcodeproj \
             -scheme VisionDemo \
@@ -61,7 +58,8 @@ jobs:
             -jobs 2 \
             -skipMacroValidation \
             -skipPackagePluginValidation \
-            OTHER_SWIFT_FLAGS="\$(inherited) -Xcc -Wno-error=non-modular-include-in-framework-module" \
+            -derivedDataPath ../build/DD \
+            CLANG_ENABLE_MODULE_DEBUGGING=NO \
             CONFIGURATION_BUILD_DIR=build/App
 
       - name: Resign (ad-hoc)
