@@ -43,10 +43,17 @@ jobs:
       - name: Build .app (unsigned)
         working-directory: swift-frontend
         run: |
-          # Build main app target only (skip BroadcastExtension)
+          # Remove BroadcastExtension target dependency so we can build
+          # without hitting the LiveKit Logging module issue
+          sed -i.bak '/PBXTargetDependency/{N;N;/BroadcastExtension/d;}' \
+            VisionDemo.xcodeproj/project.pbxproj
+          # Also remove copy-files reference to BroadcastExtension.appex
+          sed -i '' '/BroadcastExtension.appex/d' \
+            VisionDemo.xcodeproj/project.pbxproj
+
           xcodebuild clean build \
             -project VisionDemo.xcodeproj \
-            -target VisionDemo \
+            -scheme VisionDemo \
             -configuration ${{ inputs.configuration }} \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
@@ -56,7 +63,6 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="" \
             PROVISIONING_PROFILE_SPECIFIER="" \
-            SWIFT_STRICT_CONCURRENCY=minimal \
             -jobs 2 \
             -skipMacroValidation \
             -skipPackagePluginValidation \
