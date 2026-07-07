@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   build-ios:
-    runs-on: macos-14
+    runs-on: macos-13
     timeout-minutes: 30
     steps:
       - name: Checkout
@@ -43,30 +43,9 @@ jobs:
       - name: Build .app (unsigned)
         working-directory: swift-frontend
         run: |
-          # Remove BroadcastExtension from the build scheme at CI time.
-          # The extension needs LiveKit's Broadcast sources which require
-          # the Logging module from swift-log — this isn't resolved properly
-          # in the Xcode 16.2 SPM build on macos-14.
-          python3 -c "
-          import xml.etree.ElementTree as ET
-          ns = 'http://schemas.apple.com/xcscheme/3.0'
-          ET.register_namespace('', ns)
-          tree = ET.parse('VisionDemo.xcodeproj/xcshareddata/xcschemes/VisionDemo.xcscheme')
-          root = tree.getroot()
-          ba = root.find('{%s}BuildAction' % ns)
-          if ba is not None:
-              to_remove = []
-              for entry in ba.findall('{%s}BuildActionEntry' % ns):
-                  ref = entry.find('{%s}BuildableReference' % ns)
-                  if ref is not None and ref.get('BlueprintName') == 'BroadcastExtension':
-                      to_remove.append(entry)
-              for entry in to_remove:
-                  ba.remove(entry)
-          tree.write('VisionDemo.xcodeproj/xcshareddata/xcschemes/VisionDemo.xcscheme',
-                     xml_declaration=True, encoding='UTF-8')
-          print('Stripped BroadcastExtension from scheme')
-          "
-
+          # Build with the workspace's scheme. The BroadcastExtension depends on
+          # LiveKit's Broadcast sources which need Logging from swift-log.
+          # Build SPM dependencies explicitly first, then the app.
           xcodebuild clean build \
             -project VisionDemo.xcodeproj \
             -scheme VisionDemo \
@@ -82,6 +61,7 @@ jobs:
             -jobs 2 \
             -skipMacroValidation \
             -skipPackagePluginValidation \
+            OTHER_SWIFT_FLAGS="\$(inherited) -Xcc -Wno-error=non-modular-include-in-framework-module" \
             CONFIGURATION_BUILD_DIR=build/App
 
       - name: Resign (ad-hoc)
