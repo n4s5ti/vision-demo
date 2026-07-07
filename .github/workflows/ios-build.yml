@@ -43,10 +43,10 @@ jobs:
       - name: Build .app (unsigned)
         working-directory: swift-frontend
         run: |
-          # Skip BroadcastExtension — build main app only
+          # Build main app target only (skip BroadcastExtension)
           xcodebuild clean build \
             -project VisionDemo.xcodeproj \
-            -scheme VisionDemo \
+            -target VisionDemo \
             -configuration ${{ inputs.configuration }} \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
@@ -57,7 +57,6 @@ jobs:
             DEVELOPMENT_TEAM="" \
             PROVISIONING_PROFILE_SPECIFIER="" \
             SWIFT_STRICT_CONCURRENCY=minimal \
-            SWIFT_COMPILATION_MODE=incremental \
             -jobs 2 \
             -skipMacroValidation \
             -skipPackagePluginValidation \
