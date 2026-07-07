@@ -43,23 +43,23 @@ jobs:
       - name: Build .app (unsigned)
         working-directory: swift-frontend
         run: |
-          # Strip BroadcastExtension from the scheme
-          cat > /tmp/strip_broadcast.py << 'SCRIPT'
+          # Strip BroadcastExtension from the scheme to avoid
+          # "no such module Logging" error in LiveKit Broadcast sources
+          python3 -c "
 import xml.etree.ElementTree as ET
-NS = 'http://schemas.apple.com/xcscheme/3.0'
-ET.register_namespace('', NS)
-tree = ET.parse('VisionDemo.xcodeproj/xcshareddata/xcschemes/VisionDemo.xcscheme')
-root = tree.getroot()
-ba = root.find('{%s}BuildAction' % NS)
-for entry in list(ba.findall('{%s}BuildActionEntry' % NS)):
-    ref = entry.find('{%s}BuildableReference' % NS)
-    if ref is not None and ref.get('BlueprintName') == 'BroadcastExtension':
-        ba.remove(entry)
-        print('Removed BroadcastExtension from scheme')
-tree.write('VisionDemo.xcodeproj/xcshareddata/xcschemes/VisionDemo.xcscheme',
-           xml_declaration=True, encoding='UTF-8')
-SCRIPT
-          python3 /tmp/strip_broadcast.py
+NS='http://schemas.apple.com/xcscheme/3.0'
+ET.register_namespace('',NS)
+t=ET.parse('VisionDemo.xcodeproj/xcshareddata/xcschemes/VisionDemo.xcscheme')
+r=t.getroot()
+ba=r.find('{%s}BuildAction'%NS)
+for e in list(ba.findall('{%s}BuildActionEntry'%NS)):
+  br=e.find('{%s}BuildableReference'%NS)
+  if br is not None and br.get('BlueprintName')=='BroadcastExtension':
+    ba.remove(e)
+t.write('VisionDemo.xcodeproj/xcshareddata/xcschemes/VisionDemo.xcscheme',
+  xml_declaration=True, encoding='UTF-8')
+print('done')
+"
 
           xcodebuild clean build \
             -project VisionDemo.xcodeproj \
@@ -81,9 +81,8 @@ SCRIPT
       - name: Resign (ad-hoc)
         working-directory: swift-frontend
         run: |
-          # Ad-hoc sign without a provisioning profile so the .app is installable
-          # after the user re-signs with their own identity
-          codesign -f -s - --entitlements VisionDemo/VisionDemo.entitlements build/App/VisionDemo.app 2>/dev/null || true
+          codesign -f -s - --entitlements VisionDemo/VisionDemo.entitlements \
+            build/App/VisionDemo.app 2>/dev/null || true
 
       - name: Package IPA
         run: |
