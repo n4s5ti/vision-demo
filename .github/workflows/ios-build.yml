@@ -43,13 +43,29 @@ jobs:
       - name: Build .app (unsigned)
         working-directory: swift-frontend
         run: |
-          # Remove BroadcastExtension target dependency so we can build
-          # without hitting the LiveKit Logging module issue
-          sed -i.bak '/PBXTargetDependency/{N;N;/BroadcastExtension/d;}' \
-            VisionDemo.xcodeproj/project.pbxproj
-          # Also remove copy-files reference to BroadcastExtension.appex
-          sed -i '' '/BroadcastExtension.appex/d' \
-            VisionDemo.xcodeproj/project.pbxproj
+          # Remove BroadcastExtension from the build scheme at CI time.
+          # The extension needs LiveKit's Broadcast sources which require
+          # the Logging module from swift-log — this isn't resolved properly
+          # in the Xcode 16.2 SPM build on macos-14.
+          python3 -c "
+          import xml.etree.ElementTree as ET
+          ns = 'http://schemas.apple.com/xcscheme/3.0'
+          ET.register_namespace('', ns)
+          tree = ET.parse('VisionDemo.xcodeproj/xcshareddata/xcschemes/VisionDemo.xcscheme')
+          root = tree.getroot()
+          ba = root.find('{%s}BuildAction' % ns)
+          if ba is not None:
+              to_remove = []
+              for entry in ba.findall('{%s}BuildActionEntry' % ns):
+                  ref = entry.find('{%s}BuildableReference' % ns)
+                  if ref is not None and ref.get('BlueprintName') == 'BroadcastExtension':
+                      to_remove.append(entry)
+              for entry in to_remove:
+                  ba.remove(entry)
+          tree.write('VisionDemo.xcodeproj/xcshareddata/xcschemes/VisionDemo.xcscheme',
+                     xml_declaration=True, encoding='UTF-8')
+          print('Stripped BroadcastExtension from scheme')
+          "
 
           xcodebuild clean build \
             -project VisionDemo.xcodeproj \
