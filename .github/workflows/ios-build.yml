@@ -40,14 +40,14 @@ jobs:
             -project VisionDemo.xcodeproj \
             -scheme VisionDemo
 
-      - name: Archive .app (unsigned)
+      - name: Build .app (unsigned)
         working-directory: swift-frontend
         run: |
-          xcodebuild clean archive \
+          # Skip BroadcastExtension — build main app only
+          xcodebuild clean build \
             -project VisionDemo.xcodeproj \
             -scheme VisionDemo \
             -configuration ${{ inputs.configuration }} \
-            -archivePath build/VisionDemo.xcarchive \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
             ONLY_ACTIVE_ARCH=NO \
@@ -57,17 +57,23 @@ jobs:
             DEVELOPMENT_TEAM="" \
             PROVISIONING_PROFILE_SPECIFIER="" \
             SWIFT_STRICT_CONCURRENCY=minimal \
-            COMPILER_INDEX_STORE_ENABLE=NO \
             SWIFT_COMPILATION_MODE=incremental \
-            -jobs 4 \
+            -jobs 2 \
             -skipMacroValidation \
-            -skipPackagePluginValidation
+            -skipPackagePluginValidation \
+            CONFIGURATION_BUILD_DIR=build/App
+
+      - name: Resign (ad-hoc)
+        working-directory: swift-frontend
+        run: |
+          # Ad-hoc sign without a provisioning profile so the .app is installable
+          # after the user re-signs with their own identity
+          codesign -f -s - --entitlements VisionDemo/VisionDemo.entitlements build/App/VisionDemo.app 2>/dev/null || true
 
       - name: Package IPA
         run: |
           mkdir -p Payload
-          cp -R swift-frontend/build/VisionDemo.xcarchive/Products/Applications/VisionDemo.app \
-            Payload/VisionDemo.app
+          cp -R swift-frontend/build/App/VisionDemo.app Payload/VisionDemo.app
           zip -r vision-demo.ipa Payload
           rm -rf Payload
 
