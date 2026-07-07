@@ -50,7 +50,8 @@ jobs:
             -scheme VisionDemo \
             -configuration ${{ inputs.configuration }} \
             -sdk iphoneos18.2 \
-            ONLY_ACTIVE_ARCH=NO \
+            ONLY_ACTIVE_ARCH=YES \
+            TARGETED_DEVICE_FAMILY=1 \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
