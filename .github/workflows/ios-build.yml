@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   build-ios:
-    runs-on: macos-latest
+    runs-on: macos-14
     timeout-minutes: 30
     steps:
       - name: Checkout
@@ -34,11 +34,14 @@ jobs:
       - name: Build .app (unsigned)
         working-directory: swift-frontend
         run: |
+          # Clean derived data and rebuild with explicit SPM module compilation
+          rm -rf ~/Library/Developer/Xcode/DerivedData/VisionDemo-*
           xcodebuild clean build \
-            -workspace VisionDemo.xcodeproj/project.xcworkspace \
+            -project VisionDemo.xcodeproj \
             -scheme VisionDemo \
             -configuration ${{ inputs.configuration }} \
             -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
             ONLY_ACTIVE_ARCH=NO \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
@@ -49,8 +52,7 @@ jobs:
             -skipMacroValidation \
             -skipPackagePluginValidation \
             CLANG_ENABLE_MODULE_DEBUGGING=NO \
-            COMPILER_INDEX_STORE_ENABLE=NO \
-            CONFIGURATION_BUILD_DIR=build/App
+            CONFIGURATION_BUILD_DIR=build/App 2>&1 | tail -30
 
       - name: Resign (ad-hoc)
         working-directory: swift-frontend
