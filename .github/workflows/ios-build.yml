@@ -34,6 +34,19 @@ jobs:
       - name: Strip BroadcastExtension from scheme
         run: python3 scripts/strip-broadcast.py
 
+      - name: Exclude Broadcast sources from LiveKit SPM
+        run: |
+          # The LiveKit SPM package includes Broadcast/LKSampleHandler.swift
+          # which imports Logging. Rename it so it's not compiled.
+          PKG_SRC="$HOME/Library/Developer/Xcode/DerivedData/VisionDemo-*/SourcePackages/checkouts/client-sdk-swift/Sources/LiveKit"
+          for d in $PKG_SRC; do
+            if [ -f "$d/Broadcast/LKSampleHandler.swift" ]; then
+              mv "$d/Broadcast/LKSampleHandler.swift" "$d/Broadcast/LKSampleHandler.swift.bak"
+              echo "Excluded $d/Broadcast/LKSampleHandler.swift"
+              break
+            fi
+          done
+
       - name: Build .app (unsigned)
         working-directory: swift-frontend
         run: |
