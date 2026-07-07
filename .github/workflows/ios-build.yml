@@ -43,6 +43,24 @@ jobs:
       - name: Build .app (unsigned)
         working-directory: swift-frontend
         run: |
+          # Strip BroadcastExtension from the scheme
+          cat > /tmp/strip_broadcast.py << 'SCRIPT'
+import xml.etree.ElementTree as ET
+NS = 'http://schemas.apple.com/xcscheme/3.0'
+ET.register_namespace('', NS)
+tree = ET.parse('VisionDemo.xcodeproj/xcshareddata/xcschemes/VisionDemo.xcscheme')
+root = tree.getroot()
+ba = root.find('{%s}BuildAction' % NS)
+for entry in list(ba.findall('{%s}BuildActionEntry' % NS)):
+    ref = entry.find('{%s}BuildableReference' % NS)
+    if ref is not None and ref.get('BlueprintName') == 'BroadcastExtension':
+        ba.remove(entry)
+        print('Removed BroadcastExtension from scheme')
+tree.write('VisionDemo.xcodeproj/xcshareddata/xcschemes/VisionDemo.xcscheme',
+           xml_declaration=True, encoding='UTF-8')
+SCRIPT
+          python3 /tmp/strip_broadcast.py
+
           xcodebuild clean build \
             -project VisionDemo.xcodeproj \
             -scheme VisionDemo \
@@ -58,8 +76,6 @@ jobs:
             -jobs 2 \
             -skipMacroValidation \
             -skipPackagePluginValidation \
-            -derivedDataPath ../build/DD \
-            CLANG_ENABLE_MODULE_DEBUGGING=NO \
             CONFIGURATION_BUILD_DIR=build/App
 
       - name: Resign (ad-hoc)
