@@ -37,13 +37,13 @@ jobs:
       - name: Exclude Broadcast sources from LiveKit SPM
         run: |
           # LiveKit's Broadcast sources import Logging which isn't resolved
-          # properly. Rename the entire Broadcast directory to exclude it.
+          # properly. Delete the Broadcast files since Xcode uses SPM's
+          # resolved source list, not the filesystem.
           PKG_SRC="$HOME/Library/Developer/Xcode/DerivedData/VisionDemo-*/SourcePackages/checkouts/client-sdk-swift/Sources/LiveKit"
           for d in $PKG_SRC; do
             if [ -d "$d/Broadcast" ]; then
-              mv "$d/Broadcast" "$d/Broadcast.excluded"
-              echo "Excluded $d/Broadcast directory"
-              ls "$d/Broadcast.excluded/"
+              rm -rf "$d/Broadcast"
+              echo "Deleted $d/Broadcast sources"
               break
             fi
           done
