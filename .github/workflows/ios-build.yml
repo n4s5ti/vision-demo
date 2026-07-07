@@ -36,13 +36,14 @@ jobs:
 
       - name: Exclude Broadcast sources from LiveKit SPM
         run: |
-          # The LiveKit SPM package includes Broadcast/LKSampleHandler.swift
-          # which imports Logging. Rename it so it's not compiled.
+          # LiveKit's Broadcast sources import Logging which isn't resolved
+          # properly. Rename the entire Broadcast directory to exclude it.
           PKG_SRC="$HOME/Library/Developer/Xcode/DerivedData/VisionDemo-*/SourcePackages/checkouts/client-sdk-swift/Sources/LiveKit"
           for d in $PKG_SRC; do
-            if [ -f "$d/Broadcast/LKSampleHandler.swift" ]; then
-              mv "$d/Broadcast/LKSampleHandler.swift" "$d/Broadcast/LKSampleHandler.swift.bak"
-              echo "Excluded $d/Broadcast/LKSampleHandler.swift"
+            if [ -d "$d/Broadcast" ]; then
+              mv "$d/Broadcast" "$d/Broadcast.excluded"
+              echo "Excluded $d/Broadcast directory"
+              ls "$d/Broadcast.excluded/"
               break
             fi
           done
