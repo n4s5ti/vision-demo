@@ -59,8 +59,14 @@ jobs:
             -jobs 2 \
             -skipMacroValidation \
             -skipPackagePluginValidation \
-            CLANG_ENABLE_MODULE_DEBUGGING=NO \
-            CONFIGURATION_BUILD_DIR=build/App
+            CLANG_ENABLE_MODULE_DEBUGGING=NO
+
+      - name: Copy .app from DerivedData
+        run: |
+          find $HOME/Library/Developer/Xcode/DerivedData/VisionDemo-*/Build/Products/Release-iphoneos \
+            -name "VisionDemo.app" -type d | head -1 | while read APP; do
+            cp -R "$APP" swift-frontend/build/App/
+          done
 
       - name: Resign (ad-hoc)
         working-directory: swift-frontend
