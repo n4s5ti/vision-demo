@@ -2,23 +2,24 @@
 """Strip BroadcastExtension from the Xcode scheme at CI time."""
 
 import xml.etree.ElementTree as ET
+import re
+import sys
 
-NS = "http://schemas.apple.com/xcscheme/3.0"
-ET.register_namespace("", NS)
+scheme_path = sys.argv[1] if len(sys.argv) > 1 else \
+    "swift-frontend/VisionDemo.xcodeproj/xcshareddata/xcschemes/VisionDemo.xcscheme"
 
-tree = ET.parse("swift-frontend/VisionDemo.xcodeproj/xcshareddata/xcschemes/VisionDemo.xcscheme")
-root = tree.getroot()
-ba = root.find(f"{{{NS}}}BuildAction")
+with open(scheme_path) as f:
+    content = f.read()
 
-for entry in list(ba.findall(f"{{{NS}}}BuildActionEntry")):
-    ref = entry.find(f"{{{NS}}}BuildableReference")
-    if ref is not None and ref.get("BlueprintName") == "BroadcastExtension":
-        ba.remove(entry)
-        print("Removed BroadcastExtension from scheme")
-
-tree.write(
-    "swift-frontend/VisionDemo.xcodeproj/xcshareddata/xcschemes/VisionDemo.xcscheme",
-    xml_declaration=True,
-    encoding="UTF-8",
+# Use regex to remove BuildActionEntry blocks referencing BroadcastExtension
+content = re.sub(
+    r'<BuildActionEntry[^>]*>.*?BroadcastExtension.*?</BuildActionEntry>',
+    '',
+    content,
+    flags=re.DOTALL,
 )
-print("Scheme patched successfully")
+
+with open(scheme_path, 'w') as f:
+    f.write(content)
+
+print("Stripped BroadcastExtension from scheme")
