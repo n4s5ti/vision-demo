@@ -25,6 +25,17 @@ struct ConnectionDetails: Codable {
 
 final class TokenService: ObservableObject, Sendable {
     func fetchConnectionDetails(roomName: String, participantName: String) async throws -> ConnectionDetails? {
+        // Check UserDefaults first (set via SettingsView)
+        let creds = LiveKitCredentials.load()
+        if !creds.serverUrl.isEmpty, !creds.token.isEmpty {
+            return ConnectionDetails(
+                serverUrl: creds.serverUrl,
+                roomName: creds.roomName,
+                participantName: participantName,
+                participantToken: creds.token
+            )
+        }
+
         if let hardcodedConnectionDetails = fetchHardcodedConnectionDetails(roomName: roomName, participantName: participantName) {
             return hardcodedConnectionDetails
         }
