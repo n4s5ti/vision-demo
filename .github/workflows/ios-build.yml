@@ -69,10 +69,17 @@ jobs:
 
       - name: Copy .app from DerivedData
         run: |
-          find $HOME/Library/Developer/Xcode/DerivedData/VisionDemo-*/Build/Products/Release-iphoneos \
-            -name "VisionDemo.app" -type d | head -1 | while read APP; do
-            cp -R "$APP" swift-frontend/build/App/
-          done
+          mkdir -p swift-frontend/build/App
+          APP_PATH=$(find "$HOME/Library/Developer/Xcode/DerivedData/VisionDemo-*/Build/Products/Release-iphoneos" \
+            -name "VisionDemo.app" -type d 2>/dev/null | head -1)
+          if [ -n "$APP_PATH" ]; then
+            echo "Found app at $APP_PATH"
+            cp -R "$APP_PATH" swift-frontend/build/App/
+          else
+            echo "Trying alternative DerivedData path..."
+            find "$HOME/Library/Developer/Xcode/DerivedData" -name "VisionDemo.app" -type d 2>/dev/null | head -5
+            ls -la swift-frontend/build/App/ 2>/dev/null || true
+          fi
 
       - name: Resign (ad-hoc)
         working-directory: swift-frontend
