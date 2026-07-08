@@ -35,6 +35,12 @@ jobs:
           xcodebuild -version
           xcodebuild -showsdks
 
+      - name: Install iOS 18.2 Simulator Runtime
+        run: |
+          xcodebuild -downloadPlatform iOS -quiet 2>&1 || \
+            xcrun simctl runtime add "iOS 18.2 Simulator Runtime" 2>/dev/null || true
+          xcrun simctl list runtimes 2>&1 | grep iOS
+
       - name: Resolve SPM dependencies
         working-directory: swift-frontend
         run: |
