@@ -63,7 +63,6 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="" \
             PROVISIONING_PROFILE_SPECIFIER="" \
-            -jobs 2 \
             -skipMacroValidation \
             -skipPackagePluginValidation \
             CLANG_ENABLE_MODULE_DEBUGGING=NO
